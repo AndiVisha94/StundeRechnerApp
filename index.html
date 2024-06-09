@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Work Log</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f0f0f0;
+        margin: 0;
+        padding: 20px;
+      }
+      .container {
+        max-width: 600px;
+        margin: auto;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        text-align: center;
+      }
+      label {
+        display: block;
+        margin-top: 10px;
+      }
+      input,
+      textarea {
+        width: 100%;
+        padding: 10px;
+        margin-top: 5px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+      button {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        background-color: #28a745;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        margin-top: 20px;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #218838;
+      }
+      .log {
+        margin-top: 20px;
+      }
+      .log-item {
+        background: #e9ecef;
+        padding: 10px;
+        border-radius: 4px;
+        margin-top: 10px;
+      }
+      #totalHours {
+        margin-top: 20px;
+        font-weight: bold;
+      }
+      #downloadExcel {
+        margin-top: 20px;
+        background-color: #007bff;
+      }
+      #downloadExcel:hover {
+        background-color: #0056b3;
+      }
+      .toggle-link {
+        text-align: center;
+        margin-top: 10px;
+        cursor: pointer;
+        color: #007bff;
+      }
+      .toggle-link:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Work Log</h1>
+
+      <form id="loginForm">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required />
+
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required />
+
+        <button type="submit">Login</button>
+        <div class="toggle-link" id="showRegisterForm">
+          Don't have an account? Register here
+        </div>
+      </form>
+
+      <form id="registerForm" style="display: none">
+        <label for="newUsername">Username:</label>
+        <input type="text" id="newUsername" name="username" required />
+
+        <label for="newPassword">Password:</label>
+        <input type="password" id="newPassword" name="password" required />
+
+        <button type="submit">Register</button>
+        <div class="toggle-link" id="showLoginForm">
+          Already have an account? Login here
+        </div>
+      </form>
+
+      <form id="workLogForm" style="display: none">
+        <label for="date">Date:</label>
+        <input type="date" id="date" required />
+
+        <label for="startTime">Start Time:</label>
+        <input type="time" id="startTime" required />
+
+        <label for="endTime">End Time:</label>
+        <input type="time" id="endTime" required />
+
+        <label for="breaks">Breaks (in minutes):</label>
+        <input type="number" id="breaks" min="0" required />
+
+        <button type="submit">Submit</button>
+      </form>
+
+      <div class="log" id="log" style="display: none">
+        <h2>Log</h2>
+      </div>
+
+      <div id="totalHours" style="display: none"></div>
+      <button id="downloadExcel" style="display: none">
+        Download as Excel
+      </button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+    <script>
+      let totalHoursLogged = 0;
+      const logEntries = [];
+
+      // Toggle between login and registration forms
+      document
+        .getElementById("showRegisterForm")
+        .addEventListener("click", function () {
+          document.getElementById("loginForm").style.display = "none";
+          document.getElementById("registerForm").style.display = "block";
+        });
+
+      document
+        .getElementById("showLoginForm")
+        .addEventListener("click", function () {
+          document.getElementById("registerForm").style.display = "none";
+          document.getElementById("loginForm").style.display = "block";
+        });
+
+      document
+        .getElementById("loginForm")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+          // Perform login logic here (e.g., check credentials)
+          document.getElementById("loginForm").style.display = "none";
+          document.getElementById("workLogForm").style.display = "block";
+          document.getElementById("log").style.display = "block";
+          document.getElementById("totalHours").style.display = "block";
+          document.getElementById("downloadExcel").style.display = "block";
+        });
+
+      document
+        .getElementById("registerForm")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+          // Perform registration logic here (e.g., save new user)
+          document.getElementById("registerForm").style.display = "none";
+          document.getElementById("loginForm").style.display = "block";
+        });
+
+      document
+        .getElementById("workLogForm")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+          const date = document.getElementById("date").value;
+          const startTime = document.getElementById("startTime").value;
+          const endTime = document.getElementById("endTime").value;
+          const breaks = parseInt(document.getElementById("breaks").value);
+
+          const start = new Date(`1970-01-01T${startTime}:00`);
+          const end = new Date(`1970-01-01T${endTime}:00`);
+          const hoursWorked = (end - start) / (1000 * 60 * 60) - breaks / 60;
+          totalHoursLogged += hoursWorked;
+
+          logEntries.push({ date, startTime, endTime, breaks, hoursWorked });
+
+          const logItem = document.createElement("div");
+          logItem.className = "log-item";
+          logItem.innerHTML = `<strong>Date:</strong> ${date} <br>
+                           <strong>Start Time:</strong> ${startTime} <br>
+                           <strong>End Time:</strong> ${endTime} <br>
+                           <strong>Breaks:</strong> ${breaks} minutes <br>
+                           <strong>Hours Worked:</strong> ${hoursWorked.toFixed(
+                             2
+                           )}`;
+          document.getElementById("log").appendChild(logItem);
+
+          document.getElementById(
+            "totalHours"
+          ).innerText = `Total Hours Worked: ${totalHoursLogged.toFixed(2)}`;
+
+          document.getElementById("workLogForm").reset();
+        });
+
+      document
+        .getElementById("downloadExcel")
+        .addEventListener("click", function () {
+          const wb = XLSX.utils.book_new();
+          const ws = XLSX.utils.json_to_sheet(logEntries);
+          XLSX.utils.book_append_sheet(wb, ws, "Work Log");
+          XLSX.writeFile(wb, "work_log.xlsx");
+        });
+    </script>
+  </body>
+</html>
